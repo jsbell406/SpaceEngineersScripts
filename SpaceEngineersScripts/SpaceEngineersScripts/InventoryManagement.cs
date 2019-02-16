@@ -25,8 +25,6 @@ namespace SpaceEngineersScripts
             {
                 //Echo(keyValuePair.Key + " " + keyValuePair.Value.ToString());
             }
-
-
         }
 
         public Dictionary<string,long> GetCountOfInventoryItems()
@@ -37,11 +35,9 @@ namespace SpaceEngineersScripts
 
             foreach (IMyInventoryItem item in items)
             {
-
-                long value = 0;
-                if (inventoryCounts.TryGetValue(GetInventoryItemByName(item), out  value))
+                if (inventoryCounts.TryGetValue(GetInventoryItemByName(item), out long value))
                 {
-                    inventoryCounts[GetInventoryItemByName(item)] += item.Amount.RawValue;
+                    inventoryCounts[GetInventoryItemByName(item)] = value + item.Amount.RawValue;
                 }
                 else
                 {
@@ -77,11 +73,8 @@ namespace SpaceEngineersScripts
 
             List<IMyInventory> inventory = new List<IMyInventory>();
 
-            foreach(IMyCargoContainer my in myCargoContainers)
-            {
-                inventory.Add(my.GetInventory());
-            }
-
+            inventory.AddRange(myCargoContainers.Select(c => c.GetInventory()));
+          
             return inventory;
 
         }
