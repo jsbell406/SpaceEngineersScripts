@@ -4,12 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Sandbox.ModAPI.Ingame;
+using VRage;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI.Ingame;
 
+
 namespace SpaceEngineersScripts
 {
-    
+   
     public class InventoryManagement
     {
         IMyGridTerminalSystem GridTerminalSystem = null;
@@ -18,34 +20,36 @@ namespace SpaceEngineersScripts
         
         public void Main()
         {
+            
+            Dictionary<string, IMyInventoryItem> inventory = GetInvetoryObjects();
 
-            Dictionary<string, long> inventoryCounts = GetCountOfInventoryItems();
-
-            foreach(KeyValuePair<string, long> keyValuePair in inventoryCounts)
+            foreach(KeyValuePair<string, IMyInventoryItem> keyValuePair in inventory)
             {
-                //Echo(keyValuePair.Key + " " + keyValuePair.Value.ToString());
+                Echo(keyValuePair.Key + " " + keyValuePair.Value.Amount.ToString());
             }
         }
 
-        public Dictionary<string,long> GetCountOfInventoryItems()
+        public Dictionary<string, IMyInventoryItem> GetInvetoryObjects()
         {
-            Dictionary<string, long> inventoryCounts = new Dictionary<string, long>();
+            Dictionary<string, IMyInventoryItem> inventory = new Dictionary<string, IMyInventoryItem>();
             List<IMyInventoryItem> items = GetGridInventoryItems();
             
-
             foreach (IMyInventoryItem item in items)
             {
-                if (inventoryCounts.TryGetValue(GetInventoryItemByName(item), out long value))
+                IMyInventoryItem invItem;
+
+                if (inventory.TryGetValue(GetInventoryItemByName(item), out invItem))
                 {
-                    inventoryCounts[GetInventoryItemByName(item)] = value + item.Amount.RawValue;
+                    invItem.Amount += item.Amount;
                 }
                 else
                 {
-                    inventoryCounts.Add(GetInventoryItemByName(item), item.Amount.RawValue);
-                }   
+                    inventory.Add(GetInventoryItemByName(item), item);
+                }
             }
-            return inventoryCounts;
+            return inventory;
         }
+
 
         public string GetInventoryItemByName(IMyInventoryItem item)
         {
@@ -92,6 +96,5 @@ namespace SpaceEngineersScripts
 
             return items;
         }
-
     }
 }
