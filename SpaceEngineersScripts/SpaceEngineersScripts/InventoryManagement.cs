@@ -11,7 +11,7 @@ using VRage.Game.ModAPI.Ingame;
 
 namespace SpaceEngineersScripts
 {
-   
+
     public class InventoryManagement
     {
         IMyGridTerminalSystem GridTerminalSystem = null;
@@ -28,7 +28,9 @@ namespace SpaceEngineersScripts
             List<IMyTextPanel> textPanels = new List<IMyTextPanel>();
             List<IMyCargoContainer> cargoContainers = new List<IMyCargoContainer>();
 
-           
+
+            
+
             GridTerminalSystem.GetBlocks(Blocks);
             GridTerminalSystem.GetBlocksOfType(assemblers);
             GridTerminalSystem.GetBlocksOfType(refineries);
@@ -36,44 +38,145 @@ namespace SpaceEngineersScripts
             GridTerminalSystem.GetBlocksOfType(textPanels);
             GridTerminalSystem.GetBlocksOfType(cargoContainers);
 
-            foreach (IMyAssembler block in assemblers)
-            {
-                
-                Echo(block.CustomName);
-            }
+            List<IMyCargoContainer> primaryStorage = GetPrimaryStorage(cargoContainers);
 
-            foreach (IMyRefinery block in refineries)
-            {
 
-                Echo(block.CustomName);
-            }
-            foreach (IMyRadioAntenna block in antennas)
-            {
+            OrganizeInventory(primaryStorage);
+            //foreach (IMyCargoContainer block in cargoContainers)
+            //{
 
-                Echo(block.CustomName);
-            }
-            foreach (IMyTextPanel block in textPanels)
-            {
+            //    Echo(block.DefinitionDisplayNameText + " " + IsLargeCargo(block));
+            //}
 
-                Echo(block.CustomName);
-            }
-            foreach (IMyCargoContainer block in cargoContainers)
-            {
 
-                Echo(block.CustomName);
-            }
             //Dictionary<string, IMyInventoryItem> InventoryObjects = GetInvetoryObjects();
 
             //IMyTerminalBlock programmableBlock = Blocks.Where(b => b.CustomName == "Programmable block").FirstOrDefault();
+           
             //programmableBlock.CustomData = "";
 
             //foreach (KeyValuePair<string, IMyInventoryItem> nameObjectPair in InventoryObjects)
             //{
-            //    programmableBlock.CustomData += string.Format("{0}-{1}\n", nameObjectPair.Key, nameObjectPair.Value.Amount.ToString());
-            //    Echo(nameObjectPair.Key + " " + nameObjectPair.Value.Amount.ToString());
+                
+            //    programmableBlock.CustomData += string.Format("{0}-{1}\n", nameObjectPair.Key, GetItemTypeName(nameObjectPair.Value));
+            //    Echo(nameObjectPair.Key + " " + GetItemTypeName(nameObjectPair.Value));
             //}
         }
 
+        public void OrganizeInventory(List<IMyCargoContainer> primaryStorage)
+        {
+            List<IMyInventory> inventories = GetInventories();
+            
+
+            string componentStorageName = "Component Storage";
+            string oreIngotStorageName = "Ore and Ingot Storage";
+            string garbageStorageName = "Garbage Storage";
+            string gearStorageName = "Gear Storage";
+
+            IMyCargoContainer component = (IMyCargoContainer)GridTerminalSystem.GetBlockWithName(componentStorageName);
+            IMyCargoContainer ironOre = (IMyCargoContainer)GridTerminalSystem.GetBlockWithName(oreIngotStorageName);
+            IMyCargoContainer garbage = (IMyCargoContainer)GridTerminalSystem.GetBlockWithName(garbageStorageName);
+            IMyCargoContainer gear = (IMyCargoContainer)GridTerminalSystem.GetBlockWithName(gearStorageName);
+
+            if(component == null & ironOre == null)
+            {
+                primaryStorage[0].CustomName = componentStorageName;
+                primaryStorage[1].CustomName = oreIngotStorageName;
+
+                component = (IMyCargoContainer)GridTerminalSystem.GetBlockWithName(componentStorageName);
+                ironOre = (IMyCargoContainer)GridTerminalSystem.GetBlockWithName(oreIngotStorageName);
+            }
+            else if (component == null)
+            {
+                primaryStorage[0].CustomName = componentStorageName;
+                component = (IMyCargoContainer)GridTerminalSystem.GetBlockWithName(componentStorageName);
+            }
+            else if (ironOre == null)
+            {
+                primaryStorage[1].CustomName = oreIngotStorageName;
+                ironOre = (IMyCargoContainer)GridTerminalSystem.GetBlockWithName(oreIngotStorageName);
+            }
+
+            for(int y = 0; y < inventories.Count; y++)
+            {
+                if (inventories[y].GetItems().Count > 0)
+                {
+
+                    List<IMyInventoryItem> items = inventories[y].GetItems();
+
+                    for (int x = 0; x < items.Count; x++)
+                    {
+                        Echo(inventories[y].CurrentMass.ToString());
+
+                        IMyInventoryItem item;
+                        item = items[x];
+                        inventories[y].TransferItemTo(component.GetInventory(), x, null, true, item.Amount);
+                    }
+
+                }
+            }
+          
+        }
+
+        public string GetItemTypeName(IMyInventoryItem item)
+        {
+            string name = item.Content.ToString();
+            char[] delimChars = "_".ToCharArray();
+            string[] splitString = name.Split(delimChars);
+            name = splitString.Last();
+
+
+            return name;
+        }
+
+        public bool IsLargeCargo(IMyCargoContainer cargo)
+        {
+            
+            bool isLarge = false;
+             
+            string toSplit = cargo.DefinitionDisplayNameText;
+
+            char[] delimChars = " ".ToCharArray();
+
+            string[] splitString = toSplit.Split(delimChars);
+
+            if (splitString[0] == "Large")
+                isLarge = true;
+
+            return isLarge;
+        }
+
+        public List<IMyCargoContainer> GetPrimaryStorage(List<IMyCargoContainer> cargoContainers)
+        {
+            List<IMyCargoContainer> primaryStorage = new List<IMyCargoContainer>();
+        
+            int numLarge = 2;
+            int count = 0;
+
+            
+            foreach(IMyCargoContainer cargo in cargoContainers)
+            {
+                if(IsLargeCargo(cargo) & count < numLarge)
+                {
+                    
+                    primaryStorage.Add(cargo);
+                    count++;
+                }
+            }
+            return primaryStorage;
+        }
+
+        public List<IMyCargoContainer> GetAuxillaryStorage()
+        {
+            List<IMyCargoContainer> auxStorage = new List<IMyCargoContainer>();
+
+
+
+
+
+            return auxStorage;
+
+        }
         public List<IMyInventory> GetInventories()
         {
             List<IMyInventory> inventory = new List<IMyInventory>();
@@ -119,6 +222,7 @@ namespace SpaceEngineersScripts
 
             foreach (IMyInventory inv in inventory)
             {
+                
                 items.AddRange(inv.GetItems());
             }
 
